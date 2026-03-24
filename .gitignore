@@ -1,0 +1,6 @@
+# Ignore all downloaded GGUF models
+*.gguf
+models/
+
+# Ignore OpenCode logs/history if you want to keep the repo clean
+.opencode/
