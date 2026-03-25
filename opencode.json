@@ -2,19 +2,23 @@
   "$schema": "https://opencode.ai/config.json",
   "provider": {
     "ollama": {
-      "npm": "ollama-ai-provider",
+      "npm": "@ai-sdk/openai-compatible",
       "name": "Ollama (local)",
       "options": {
-        "baseURL": "http://localhost:11434/api"
+        "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "qwen35-bf16": {
-          "name": "Qwen3.5-27B BF16"
+        "qwen35-27b": {
+          "name": "Qwen3.5-27B Reasoning Distilled",
+          "limit": {
+            "context": 32768,
+            "output": 8192
+          }
         }
       }
     }
   },
-  "model": "ollama/qwen35-bf16",
+  "model": "ollama/qwen35-27b",
   "instructions": [
     "agent_instructions.md"
   ]
