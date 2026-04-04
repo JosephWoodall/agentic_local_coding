@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemma 4 · Local AI Chat</title>
+  <meta name="description" content="Local AI chat interface powered by Gemma 4 and llama.cpp — private, fast, no cloud." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --bg-base:        #0a0c10;
+      --bg-surface:     #111318;
+      --bg-elevated:    #181b22;
+      --bg-glass:       rgba(24, 27, 34, 0.7);
+      --border:         rgba(255,255,255,0.07);
+      --border-bright:  rgba(255,255,255,0.14);
+      --accent:         #4f8ef7;
+      --accent-glow:    rgba(79,142,247,0.25);
+      --accent-2:       #7c5cbf;
+      --gemma-green:    #34a853;
+      --text-primary:   #e8eaf0;
+      --text-secondary: #8b90a0;
+      --text-muted:     #555a6b;
+      --user-bubble:    #1a2540;
+      --user-border:    rgba(79,142,247,0.3);
+      --ass-bubble:     #141820;
+      --ass-border:     rgba(255,255,255,0.06);
+      --danger:         #e05260;
+      --success:        #34a853;
+      --radius-sm:      8px;
+      --radius-md:      14px;
+      --radius-lg:      22px;
+      --shadow-glow:    0 0 40px rgba(79,142,247,0.08);
+      --transition:     all 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    /* ── Animated background ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(79,142,247,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(124,92,191,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    #app {
+      position: relative;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: 100vh;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 24px;
+    }
+
+    #sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-gem {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #4f8ef7 0%, #7c5cbf 100%);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+    }
+
+    .logo-text h1 {
+      font-size: 15px; font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+    .logo-text span {
+      font-size: 11px; color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* Model info card */
+    #model-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(52,168,83,0.12);
+      border: 1px solid rgba(52,168,83,0.3);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: var(--gemma-green);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .model-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--gemma-green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .model-name {
+      font-size: 14px; font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .model-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .model-detail strong { color: var(--text-primary); font-weight: 500; }
+
+    /* Status indicator */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    #status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+
+    #status-dot.online { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    #status-dot.error  { background: var(--danger);  box-shadow: 0 0 6px var(--danger); }
+
+    /* Config section */
+    .config-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .config-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .config-input {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+      transition: var(--transition);
+      width: 100%;
+    }
+
+    .config-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .config-input::placeholder { color: var(--text-muted); }
+
+    /* Slider */
+    .config-slider-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: var(--bg-base);
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+    .slider-value {
+      font-size: 12px;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    /* Clear button */
+    #btn-clear {
+      margin-top: auto;
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+    #btn-clear:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: rgba(224,82,96,0.08);
+    }
+
+    /* ── Main area ── */
+    #main {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Chat header ── */
+    #chat-header {
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      flex-shrink: 0;
+    }
+
+    #chat-header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    #token-counter {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Messages ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+    /* Welcome state */
+    #welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 16px;
+      text-align: center;
+      padding: 40px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    #welcome .welcome-gem {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #4f8ef7 0%, #7c5cbf 100%);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      box-shadow: 0 8px 32px rgba(79,142,247,0.25);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    #welcome h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    #welcome p  { font-size: 14px; color: var(--text-secondary); max-width: 360px; line-height: 1.6; }
+
+    .welcome-chips {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px;
+    }
+    .chip {
+      padding: 8px 16px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-bright);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+      background: rgba(79,142,247,0.08);
+    }
+
+    /* Message bubbles */
+    .message {
+      display: flex;
+      gap: 14px;
+      animation: msgIn 0.25s ease;
+      max-width: 860px;
+      width: 100%;
+    }
+
+    @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+
+    .message.user .avatar {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+    .message.assistant .avatar {
+      background: linear-gradient(135deg, #1e3a5f, #2d1f4a);
+      font-size: 18px;
+    }
+
+    .bubble {
+      max-width: calc(100% - 50px);
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .message.user .bubble {
+      background: var(--user-bubble);
+      border: 1px solid var(--user-border);
+      border-bottom-right-radius: 4px;
+      color: var(--text-primary);
+    }
+
+    .message.assistant .bubble {
+      background: var(--ass-bubble);
+      border: 1px solid var(--ass-border);
+      border-bottom-left-radius: 4px;
+      color: var(--text-primary);
+    }
+
+    /* Markdown within bubbles */
+    .bubble p { margin-bottom: 10px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble h1, .bubble h2, .bubble h3 {
+      margin: 14px 0 6px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .bubble h1 { font-size: 18px; }
+    .bubble h2 { font-size: 16px; }
+    .bubble h3 { font-size: 14px; color: var(--text-secondary); }
+    .bubble ul, .bubble ol { padding-left: 20px; margin: 8px 0; }
+    .bubble li { margin-bottom: 4px; }
+    .bubble code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      background: rgba(255,255,255,0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #a5d6ff;
+    }
+    .bubble pre {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      overflow-x: auto;
+      margin: 12px 0;
+      position: relative;
+    }
+    .bubble pre code {
+      background: none; padding: 0; color: #e6edf3;
+      font-size: 13px; line-height: 1.6;
+    }
+    .bubble strong { font-weight: 600; color: var(--text-primary); }
+    .bubble em { color: var(--text-secondary); font-style: italic; }
+    .bubble blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 14px;
+      color: var(--text-secondary);
+      margin: 8px 0;
+    }
+    .bubble a { color: var(--accent); text-decoration: none; }
+    .bubble a:hover { text-decoration: underline; }
+    .bubble hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+    /* Thinking indicator */
+    .thinking-dots {
+      display: flex; gap: 5px; align-items: center; padding: 4px 0;
+    }
+    .thinking-dots span {
+      width: 6px; height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: dot-bounce 1.4s ease-in-out infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dot-bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+      40%            { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── Input area ── */
+    #input-area {
+      padding: 16px 28px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      flex-shrink: 0;
+    }
+
+    #input-wrapper {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      transition: var(--transition);
+    }
+
+    #input-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow), var(--shadow-glow);
+    }
+
+    #user-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: none;
+      max-height: 180px;
+      min-height: 24px;
+      overflow-y: auto;
+    }
+
+    #user-input::placeholder { color: var(--text-muted); }
+    #user-input::-webkit-scrollbar { width: 3px; }
+    #user-input::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+    #send-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(79,142,247,0.3);
+    }
+
+    #send-btn:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 6px 20px rgba(79,142,247,0.45); }
+    #send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    #send-btn svg { width: 16px; height: 16px; }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* Error toast */
+    #error-toast {
+      display: none;
+      position: fixed;
+      bottom: 100px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(224,82,96,0.15);
+      border: 1px solid rgba(224,82,96,0.4);
+      color: #f08090;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      max-width: 480px;
+      text-align: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      #sidebar { display: none; }
+      #app { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div id="sidebar-logo">
+      <div class="logo-gem">💎</div>
+      <div class="logo-text">
+        <h1>Gemma 4</h1>
+        <span>Local AI · llama.cpp</span>
+      </div>
+    </div>
+
+    <!-- Model card -->
+    <div>
+      <div class="sidebar-section-label">Model</div>
+      <div id="model-card">
+        <div class="model-badge">Local</div>
+        <div class="model-name" id="model-display-name">Gemma 4 IT</div>
+        <div class="model-detail">
+          <strong>Apache 2.0</strong> · Google<br/>
+          Context: <strong>128K tokens</strong><br/>
+          Multimodal · Function Calling
+        </div>
+      </div>
+    </div>
+
+    <!-- Server status -->
+    <div>
+      <div class="sidebar-section-label">Server</div>
+      <div id="status-bar">
+        <div id="status-dot"></div>
+        <span id="status-text">Checking...</span>
+      </div>
+    </div>
+
+    <!-- Config -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="sidebar-section-label">Configuration</div>
+
+      <div class="config-row">
+        <label class="config-label" for="server-url">API URL</label>
+        <input id="server-url" class="config-input" type="text"
+               value="http://127.0.0.1:8080/v1" placeholder="http://127.0.0.1:8080/v1" />
+      </div>
+
+      <div class="config-row">
+        <label class="config-label" for="max-tokens">Max Tokens</label>
+        <div class="config-slider-row">
+          <input id="max-tokens" type="range" min="256" max="8192" step="256" value="2048" />
+          <div class="slider-value" id="max-tokens-display">2048</div>
+        </div>
+      </div>
+
+      <div class="config-row">
+        <label class="config-label" for="temperature">Temperature</label>
+        <div class="config-slider-row">
+          <input id="temperature" type="range" min="0" max="2" step="0.05" value="0.7" />
+          <div class="slider-value" id="temperature-display">0.70</div>
+        </div>
+      </div>
+
+      <div class="config-row">
+        <label class="config-label" for="system-prompt">System Prompt</label>
+        <textarea id="system-prompt" class="config-input" rows="3"
+                  style="resize:vertical; font-family: 'Inter', sans-serif; font-size:12px;">You are Gemma 4, a helpful, accurate, and thoughtful AI assistant. Provide clear and concise responses.</textarea>
+      </div>
+    </div>
+
+    <button id="btn-clear">🗑 Clear conversation</button>
+  </aside>
+
+  <!-- Main -->
+  <main id="main">
+    <header id="chat-header">
+      <div id="chat-header-title">Chat</div>
+      <div id="token-counter">0 tokens used</div>
+    </header>
+
+    <div id="messages">
+      <div id="welcome">
+        <div class="welcome-gem">💎</div>
+        <h2>Gemma 4 — Local AI</h2>
+        <p>Frontier multimodal intelligence running entirely on your machine via llama.cpp. No cloud, no data leaving your device.</p>
+        <div class="welcome-chips">
+          <div class="chip" onclick="fillPrompt(this)">Explain quantum entanglement</div>
+          <div class="chip" onclick="fillPrompt(this)">Write a Rust function to parse JSON</div>
+          <div class="chip" onclick="fillPrompt(this)">What's new in Gemma 4?</div>
+          <div class="chip" onclick="fillPrompt(this)">Debug this Python code</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <div id="input-wrapper">
+        <textarea id="user-input" placeholder="Message Gemma 4..." rows="1"></textarea>
+        <button id="send-btn" title="Send (Enter)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter to send · Shift+Enter for new line · All processing is local</div>
+    </div>
+  </main>
+</div>
+
+<div id="error-toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let messages = [];       // { role, content }[]
+let isStreaming = false;
+let totalTokens = 0;
+let abortController = null;
+
+// ── DOM refs ───────────────────────────────────────────────────────────────────
+const messagesEl   = document.getElementById('messages');
+const welcomeEl    = document.getElementById('welcome');
+const userInputEl  = document.getElementById('user-input');
+const sendBtnEl    = document.getElementById('send-btn');
+const statusDotEl  = document.getElementById('status-dot');
+const statusTextEl = document.getElementById('status-text');
+const tokenCountEl = document.getElementById('token-counter');
+const serverUrlEl  = document.getElementById('server-url');
+const maxTokensEl  = document.getElementById('max-tokens');
+const tempEl       = document.getElementById('temperature');
+const systemPromEl = document.getElementById('system-prompt');
+const errorToast   = document.getElementById('error-toast');
+const modelNameEl  = document.getElementById('model-display-name');
+
+// ── Sliders ────────────────────────────────────────────────────────────────────
+maxTokensEl.addEventListener('input', () => {
+  document.getElementById('max-tokens-display').textContent = maxTokensEl.value;
+});
+tempEl.addEventListener('input', () => {
+  document.getElementById('temperature-display').textContent = parseFloat(tempEl.value).toFixed(2);
+});
+
+// ── Auto-resize textarea ───────────────────────────────────────────────────────
+userInputEl.addEventListener('input', () => {
+  userInputEl.style.height = 'auto';
+  userInputEl.style.height = Math.min(userInputEl.scrollHeight, 180) + 'px';
+});
+
+// ── Send on Enter (not Shift+Enter) ───────────────────────────────────────────
+userInputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!isStreaming) handleSend();
+  }
+});
+
+sendBtnEl.addEventListener('click', () => {
+  if (isStreaming) {
+    abortController?.abort();
+    setStreaming(false);
+  } else {
+    handleSend();
+  }
+});
+
+// ── Server health check ────────────────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const r = await fetch(serverUrlEl.value.replace(/\/v1$/, '') + '/health', { signal: AbortSignal.timeout(3000) });
+    const json = await r.json();
+    if (json.status === 'ok' || json.status === 'loading model') {
+      statusDotEl.className = 'online';
+      statusTextEl.textContent = json.status === 'ok' ? 'Connected' : 'Loading model…';
+    } else {
+      throw new Error();
+    }
+
+    // Also try to get model name
+    try {
+      const modelsR = await fetch(serverUrlEl.value + '/models', { signal: AbortSignal.timeout(3000) });
+      const modelsJson = await modelsR.json();
+      if (modelsJson?.data?.[0]?.id) {
+        modelNameEl.textContent = modelsJson.data[0].id;
+      }
+    } catch {}
+
+  } catch {
+    statusDotEl.className = 'error';
+    statusTextEl.textContent = 'Server offline';
+  }
+}
+
+setInterval(checkHealth, 5000);
+checkHealth();
+serverUrlEl.addEventListener('change', checkHealth);
+
+// ── Chat logic ────────────────────────────────────────────────────────────────
+function fillPrompt(chipEl) {
+  userInputEl.value = chipEl.textContent;
+  userInputEl.focus();
+  userInputEl.dispatchEvent(new Event('input'));
+}
+
+function setStreaming(v) {
+  isStreaming = v;
+  sendBtnEl.disabled = false;
+  if (v) {
+    sendBtnEl.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
+    sendBtnEl.title = 'Stop';
+  } else {
+    sendBtnEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
+    sendBtnEl.title = 'Send (Enter)';
+  }
+}
+
+function showError(msg) {
+  errorToast.textContent = msg;
+  errorToast.style.display = 'block';
+  setTimeout(() => { errorToast.style.display = 'none'; }, 5000);
+}
+
+async function handleSend() {
+  const text = userInputEl.value.trim();
+  if (!text) return;
+
+  // Hide welcome
+  if (welcomeEl) welcomeEl.remove();
+
+  // Add user message
+  messages.push({ role: 'user', content: text });
+  appendMessage('user', text);
+  userInputEl.value = '';
+  userInputEl.style.height = 'auto';
+
+  // Assistant placeholder
+  const assistantMsgEl = appendMessage('assistant', null); // null = thinking dots
+  setStreaming(true);
+
+  abortController = new AbortController();
+
+  const body = {
+    model: 'gemma-4-it',
+    messages: [
+      ...(systemPromEl.value.trim() ? [{ role: 'system', content: systemPromEl.value.trim() }] : []),
+      ...messages
+    ],
+    max_tokens:  parseInt(maxTokensEl.value),
+    temperature: parseFloat(tempEl.value),
+    stream:      true
+  };
+
+  try {
+    const resp = await fetch(serverUrlEl.value + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+      body: JSON.stringify(body),
+      signal: abortController.signal
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`Server error ${resp.status}: ${errText}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    const bubbleContent = assistantMsgEl.querySelector('.bubble-content');
+
+    // Replace thinking dots with empty content
+    bubbleContent.innerHTML = '';
+
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // Parse SSE lines
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';  // keep incomplete line
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const chunk = JSON.parse(data);
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullContent += delta;
+            bubbleContent.innerHTML = renderMarkdown(fullContent);
+            // Append cursor
+            const cursor = document.createElement('span');
+            cursor.className = 'stream-cursor';
+            cursor.textContent = '▋';
+            cursor.style.cssText = 'animation: blink 1s step-end infinite; color: var(--accent);';
+            bubbleContent.appendChild(cursor);
+            scrollToBottom();
+          }
+          const usage = chunk.usage;
+          if (usage?.total_tokens) {
+            totalTokens += usage.total_tokens;
+            tokenCountEl.textContent = totalTokens.toLocaleString() + ' tokens used';
+          }
+        } catch {}
+      }
+    }
+
+    // Finalize — remove cursor
+    bubbleContent.innerHTML = renderMarkdown(fullContent);
+    messages.push({ role: 'assistant', content: fullContent });
+
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      const bubbleContent = assistantMsgEl.querySelector('.bubble-content');
+      if (bubbleContent.textContent === '') {
+        assistantMsgEl.remove();
+        messages.pop();
+      }
+    } else {
+      const bubbleContent = assistantMsgEl.querySelector('.bubble-content');
+      bubbleContent.innerHTML = `<span style="color:var(--danger)">⚠ ${escapeHtml(err.message)}</span>`;
+      showError('Could not reach llama-server. Is it running on port 8080?');
+    }
+  } finally {
+    setStreaming(false);
+    scrollToBottom();
+  }
+}
+
+// ── Render messages ───────────────────────────────────────────────────────────
+function appendMessage(role, content) {
+  const wrap = document.createElement('div');
+  wrap.className = `message ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'user' ? '👤' : '💎';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  const bubbleContent = document.createElement('div');
+  bubbleContent.className = 'bubble-content';
+
+  if (content === null) {
+    // Show thinking dots
+    bubbleContent.innerHTML = `<div class="thinking-dots"><span></span><span></span><span></span></div>`;
+  } else {
+    bubbleContent.innerHTML = renderMarkdown(content);
+  }
+
+  bubble.appendChild(bubbleContent);
+  wrap.appendChild(avatar);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollToBottom();
+  return wrap;
+}
+
+function scrollToBottom() {
+  messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+}
+
+// ── Markdown renderer (lightweight, no deps) ──────────────────────────────────
+function renderMarkdown(md) {
+  if (!md) return '';
+  let html = escapeHtml(md);
+
+  // Code blocks
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    return `<pre><code class="lang-${lang}">${code.trimEnd()}</code></pre>`;
+  });
+
+  // Inline code
+  html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+  // Bold & italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Headings
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Blockquote
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // Horizontal rule
+  html = html.replace(/^---$/gm, '<hr/>');
+
+  // Unordered lists
+  html = html.replace(/^[\*\-] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>[\s\S]+?<\/li>)/g, '<ul>$1</ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // Paragraphs
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = '<p>' + html + '</p>';
+
+  // Clean up nested p tags around block elements
+  html = html.replace(/<p>(<(?:pre|ul|ol|h[1-6]|hr|blockquote)[^>]*>)/g, '$1');
+  html = html.replace(/(<\/(?:pre|ul|ol|h[1-6]|hr|blockquote)>)<\/p>/g, '$1');
+  html = html.replace(/<p><\/p>/g, '');
+
+  // Single newlines → <br> (inside p)
+  html = html.replace(/\n/g, '<br/>');
+
+  return html;
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── Clear ──────────────────────────────────────────────────────────────────────
+document.getElementById('btn-clear').addEventListener('click', () => {
+  messages = [];
+  messagesEl.innerHTML = '';
+  totalTokens = 0;
+  tokenCountEl.textContent = '0 tokens used';
+
+  // Re-add welcome
+  const w = document.createElement('div');
+  w.id = 'welcome';
+  w.innerHTML = `
+    <div class="welcome-gem">💎</div>
+    <h2>Gemma 4 — Local AI</h2>
+    <p>Frontier multimodal intelligence running entirely on your machine via llama.cpp. No cloud, no data leaving your device.</p>
+    <div class="welcome-chips">
+      <div class="chip" onclick="fillPrompt(this)">Explain quantum entanglement</div>
+      <div class="chip" onclick="fillPrompt(this)">Write a Rust function to parse JSON</div>
+      <div class="chip" onclick="fillPrompt(this)">What's new in Gemma 4?</div>
+      <div class="chip" onclick="fillPrompt(this)">Debug this Python code</div>
+    </div>`;
+  messagesEl.appendChild(w);
+});
+
+// ── CSS blink keyframe ─────────────────────────────────────────────────────────
+const style = document.createElement('style');
+style.textContent = '@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }';
+document.head.appendChild(style);
+</script>
+</body>
+</html>

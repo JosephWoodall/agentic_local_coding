@@ -2,92 +2,198 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODELS_DIR="$SCRIPT_DIR/models"
+WEB_DIR="$SCRIPT_DIR/web"
+LLAMA_PORT="${LLAMA_PORT:-8080}"
+GPU_LAYERS="${GPU_LAYERS:-0}"
+CTX_SIZE="${CTX_SIZE:-8192}"
+LLAMA_SERVER_PID=""
+OPEN_WEB=false
+LOG_FILE="/tmp/llama-server.log"
 
-echo "Starting Ollama service..."
-sudo systemctl start ollama
+# Prefer a local binary (newer version) over system install
+if [ -x "$SCRIPT_DIR/bin/llama-server" ]; then
+    LLAMA_BIN="$SCRIPT_DIR/bin/llama-server"
+else
+    LLAMA_BIN="llama-server"
+fi
 
-# Wait for Ollama to be ready
-for i in $(seq 1 10); do
-    if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-        break
-    fi
-    echo "Waiting for Ollama to be ready... ($i/10)"
-    sleep 1
+# ── Parse flags ────────────────────────────────────────────────────────────────
+for arg in "$@"; do
+    case "$arg" in
+        --web) OPEN_WEB=true ;;
+        --gpu) GPU_LAYERS=99; CTX_SIZE=32768 ;;
+        --cpu) GPU_LAYERS=0;  CTX_SIZE=8192  ;;
+    esac
 done
 
-# Auto-register any GGUF models that have a Modelfile — recreate if Modelfile changed
-if [ -d "$MODELS_DIR" ]; then
-    echo "Scanning models/ for Modelfiles to auto-register..."
-    while IFS= read -r -d '' modelfile; do
-        model_dir="$(dirname "$modelfile")"
-        dir_name="$(basename "$model_dir")"
-        # Derive a clean Ollama tag: lowercase, replace spaces/underscores/dots with hyphens
-        tag="$(echo "$dir_name" | tr '[:upper:]' '[:lower:]' | tr ' _.' '-' | tr -s '-')"
-        hash_file="$model_dir/.modelfile.sha256"
+# ── Find GGUF model ────────────────────────────────────────────────────────────
+find_model() {
+    if [ ! -d "$MODELS_DIR" ]; then
+        echo "[error] No models/ directory found at $MODELS_DIR"
+        echo "        Download a Gemma 4 GGUF and place it in models/"
+        echo "        Example: .venv/bin/hf download ggml-org/gemma-4-E2B-it-GGUF --include '*Q4_K_M*' --local-dir models/"
+        exit 1
+    fi
 
-        # Compute current hash of the Modelfile
-        current_hash=$(sha256sum "$modelfile" 2>/dev/null | awk '{print $1}')
-        stored_hash=$(cat "$hash_file" 2>/dev/null || echo "")
+    local model
+    # Exclude .cache/ (HF incomplete downloads) and only match real .gguf files
+    model=$(find "$MODELS_DIR" -type f -name "*.gguf" \
+        ! -path "*/.cache/*" \
+        ! -name "*.incomplete" \
+        | sort | head -n 1)
 
-        # Check if registered in Ollama
-        is_registered=false
-        if ollama list 2>/dev/null | awk '{print $1}' | grep -q "^${tag}:"; then
-            is_registered=true
+    if [ -z "$model" ]; then
+        echo "[error] No .gguf file found in $MODELS_DIR"
+        echo "        Download a Gemma 4 GGUF, e.g.:"
+        echo "          .venv/bin/hf download ggml-org/gemma-4-E2B-it-GGUF --include '*Q4_K_M*' --local-dir models/"
+        exit 1
+    fi
+
+    echo "$model"
+}
+
+# ── Start llama-server ─────────────────────────────────────────────────────────
+start_server() {
+    local model="$1"
+    local mode="CPU"
+    [ "$GPU_LAYERS" -gt 0 ] && mode="GPU (${GPU_LAYERS} layers)"
+    local ver
+    ver=$("$LLAMA_BIN" --version 2>&1 | head -1 || echo "unknown")
+    echo ""
+    echo "┌─────────────────────────────────────────────────────┐"
+    echo "│            Gemma 4 · llama.cpp Engine               │"
+    echo "└─────────────────────────────────────────────────────┘"
+    echo "  Binary : $(basename "$LLAMA_BIN") ($ver)"
+    echo "  Model  : $(basename "$model")"
+    echo "  Mode   : $mode"
+    echo "  Port   : $LLAMA_PORT"
+    echo "  Context: $CTX_SIZE tokens"
+    echo "  Log    : $LOG_FILE"
+    echo ""
+
+    "$LLAMA_BIN" \
+        --model "$model" \
+        --port "$LLAMA_PORT" \
+        --host 127.0.0.1 \
+        --n-gpu-layers "$GPU_LAYERS" \
+        --ctx-size "$CTX_SIZE" \
+        --parallel 4 \
+        --cont-batching \
+        > "$LOG_FILE" 2>&1 &
+    LLAMA_SERVER_PID=$!
+    echo "  [pid] llama-server started (PID $LLAMA_SERVER_PID)"
+}
+
+# ── Wait for server ready ──────────────────────────────────────────────────────
+wait_for_server() {
+    local timeout=300  # 5 minutes — large models on CPU take a while to load
+    echo -n "  [wait] Loading model (may take several minutes on CPU)..."
+
+    for i in $(seq 1 $timeout); do
+        # Detect immediate crash — no point waiting
+        if ! kill -0 "$LLAMA_SERVER_PID" 2>/dev/null; then
+            echo ""
+            echo "  [error] llama-server crashed! Last log output:"
+            echo "  ─────────────────────────────────────────────"
+            tail -25 "$LOG_FILE" 2>/dev/null | sed 's/^/  /'
+            echo "  ─────────────────────────────────────────────"
+            echo "  Full log: $LOG_FILE"
+            cleanup
+            exit 1
         fi
 
-        if $is_registered && [ "$current_hash" = "$stored_hash" ]; then
-            echo "  [skip] '$tag' already registered and Modelfile unchanged."
+        if curl -s "http://127.0.0.1:$LLAMA_PORT/health" 2>/dev/null | grep -q '"status"'; then
+            echo " ready! (${i}s)"
+            return 0
+        fi
+
+        # Heartbeat every 30s so the user knows it's still working
+        if (( i % 30 == 0 )); then
+            echo -n " ${i}s..."
         else
-            if $is_registered; then
-                echo "  [update] Modelfile changed — recreating '$tag'..."
-            else
-                echo "  [register] Creating Ollama model '$tag'..."
-            fi
-            (cd "$model_dir" && ollama create "$tag" -f Modelfile)
-            if [ $? -eq 0 ]; then
-                echo "$current_hash" > "$hash_file"
-                echo "  [ok] '$tag' registered successfully."
-            else
-                echo "  [warn] Failed to register '$tag'. Check $modelfile"
-            fi
+            echo -n "."
         fi
-    done < <(find "$MODELS_DIR" -name "Modelfile" -print0)
-fi
+        sleep 1
+    done
 
-# Ensure the @ai-sdk/openai-compatible npm package is installed for the custom Ollama provider
-OPENCODE_CONFIG_DIR="$HOME/.config/opencode"
-if [ ! -d "$OPENCODE_CONFIG_DIR/node_modules/@ai-sdk/openai-compatible" ]; then
-    echo "Installing @ai-sdk/openai-compatible for OpenCode custom provider..."
-    npm --prefix "$OPENCODE_CONFIG_DIR" install @ai-sdk/openai-compatible --silent 2>&1 && \
-        echo "  [ok] @ai-sdk/openai-compatible installed." || \
-        echo "  [warn] Failed to install @ai-sdk/openai-compatible — custom Ollama provider may not work."
-else
-    echo "  [skip] @ai-sdk/openai-compatible already installed."
-fi
+    echo ""
+    echo "  [error] llama-server did not become ready in ${timeout}s."
+    echo "  Last log output:"
+    tail -25 "$LOG_FILE" 2>/dev/null | sed 's/^/  /'
+    echo "  Full log: $LOG_FILE"
+    cleanup
+    exit 1
+}
 
-echo "----------------------------------------"
+# ── Ensure @ai-sdk/openai-compatible is installed ─────────────────────────────
+ensure_npm_dep() {
+    local OPENCODE_CONFIG_DIR="$HOME/.config/opencode"
+    if [ ! -d "$OPENCODE_CONFIG_DIR/node_modules/@ai-sdk/openai-compatible" ]; then
+        echo "  [npm] Installing @ai-sdk/openai-compatible..."
+        npm --prefix "$OPENCODE_CONFIG_DIR" install @ai-sdk/openai-compatible --silent 2>&1 && \
+            echo "  [ok] @ai-sdk/openai-compatible installed." || \
+            echo "  [warn] Failed to install @ai-sdk/openai-compatible — TUI provider may not work."
+    else
+        echo "  [skip] @ai-sdk/openai-compatible already installed."
+    fi
+}
 
-# Function to clean up and stop the service
+# ── Cleanup ────────────────────────────────────────────────────────────────────
 cleanup() {
-    echo -e "\nStopping Ollama service..."
-    sudo systemctl stop ollama
+    echo ""
+    echo "Shutting down llama-server..."
+    if [ -n "$LLAMA_SERVER_PID" ] && kill -0 "$LLAMA_SERVER_PID" 2>/dev/null; then
+        kill "$LLAMA_SERVER_PID"
+        wait "$LLAMA_SERVER_PID" 2>/dev/null
+    fi
     echo "Engine shut down cleanly."
     exit 0
 }
 
-# Trap Ctrl+C (SIGINT) and script exit to trigger the cleanup
-trap cleanup SIGINT EXIT
+trap cleanup SIGINT SIGTERM EXIT
 
-echo "Ollama is running. Launching OpenCode..."
+# ── Main ───────────────────────────────────────────────────────────────────────
+MODEL=$(find_model)
+start_server "$MODEL"
+wait_for_server
+ensure_npm_dep
 
-# If no arguments are passed, just launch the TUI normally
-if [ $# -eq 0 ]; then
-    opencode
-# If the first argument is a file that exists, tell the agent to read it
-elif [ -f "$1" ]; then
-    echo "Directing agent to execute $1..."
-    opencode --prompt "Please read the instructions in the file '$1' and execute them step-by-step."
-# If it's just regular text, pass it as a prompt
+echo ""
+echo "----------------------------------------"
+
+if $OPEN_WEB; then
+    echo "  [web] Opening browser chat UI..."
+    WEB_FILE="$WEB_DIR/index.html"
+    if [ ! -f "$WEB_FILE" ]; then
+        echo "  [error] web/index.html not found. Run without --web for TUI mode."
+        cleanup
+        exit 1
+    fi
+    if command -v xdg-open &>/dev/null; then
+        xdg-open "file://$WEB_FILE" &
+    elif command -v firefox &>/dev/null; then
+        firefox "file://$WEB_FILE" &
+    elif command -v chromium &>/dev/null; then
+        chromium "file://$WEB_FILE" &
+    fi
+    echo "  Opened web/index.html in browser."
+    echo "  llama-server is running at http://127.0.0.1:$LLAMA_PORT"
+    echo "  Press Ctrl+C to stop."
+    wait "$LLAMA_SERVER_PID"
 else
-    opencode --prompt "$*"
+    echo "  Gemma 4 is running. Launching OpenCode TUI..."
+    echo ""
+
+    if [ $# -eq 0 ] || [ "$1" = "--web" ]; then
+        opencode
+    elif [ -f "$1" ]; then
+        echo "  Directing agent to execute $1..."
+        opencode --prompt "Please read the instructions in the file '$1' and execute them step-by-step."
+    else
+        OPENCODE_ARGS=()
+        for arg in "$@"; do
+            [ "$arg" != "--web" ] && OPENCODE_ARGS+=("$arg")
+        done
+        opencode --prompt "${OPENCODE_ARGS[*]}"
+    fi
 fi

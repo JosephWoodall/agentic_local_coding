@@ -13,17 +13,18 @@ The magic is that local models have finally become capable enough to match cloud
 ## Technical Foundations
 
 - **GGUF Format**: GPT-Generated Unified Format enables efficient quantization and serving of large models on consumer hardware
-- **Ollama**: Streamlined local LLM deployment with automatic GPU acceleration
-- **Reasoning Distillation**: Models like Qwen3.5-27B distilled from Claude's chain-of-thought patterns provide strong reasoning with reasonable resource requirements
+- **llama.cpp / llama-server**: High-performance C++ inference engine with OpenAI-compatible REST API; serves as the universal backend for both terminal and web interfaces
+- **Gemma 4 (Google, Apache 2.0)**: Frontier multimodal model (5B–31B) with 128K context, alternating local/global attention, Per-Layer Embeddings, and Shared KV Cache — achieving Pareto-frontier quality/size ratios
 - **Agentic Scaffolding**: Structured workflows for planning, verification, and self-improvement
+- **Dual Interface**: Terminal mode via opencode TUI + browser chat UI (`web/index.html`) — same llama-server backend
 
 ## Alternatives Rejected
 
 | Alternative | Why It's Inferior |
 |-------------|-------------------|
 | Cloud-based AI assistants (Copilot, Cursor, Claude API) | Privacy violations, subscription costs, internet dependency, data sovereignty loss |
+| Ollama | Additional abstraction layer over llama.cpp; not needed when llama-server is available directly with an OpenAI-compatible API |
 | Raw local models without agentic frameworks | Lacks structured reasoning, planning, verification, and self-correction mechanisms |
-| Non-distilled base models | Too slow for interactive use; require impractical hardware |
 
 ## Alignment Verification
 

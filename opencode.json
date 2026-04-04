@@ -1,24 +1,24 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "ollama": {
+    "llama.cpp": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Ollama (local)",
+      "name": "llama-server (local)",
       "options": {
-        "baseURL": "http://localhost:11434/v1"
+        "baseURL": "http://127.0.0.1:8080/v1"
       },
       "models": {
-        "qwen35-27b": {
-          "name": "Qwen3.5-27B Reasoning Distilled",
+        "gemma-4-it": {
+          "name": "Gemma 4 (local)",
           "limit": {
-            "context": 32768,
+            "context": 128000,
             "output": 8192
           }
         }
       }
     }
   },
-  "model": "ollama/qwen35-27b",
+  "model": "llama.cpp/gemma-4-it",
   "instructions": [
     "agent_instructions.md"
   ]

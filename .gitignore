@@ -2,5 +2,11 @@
 *.gguf
 models/
 
+# Local llama.cpp binaries (download via setup instructions)
+bin/
+
+# Python virtual environment
+.venv/
+
 # Ignore OpenCode logs/history if you want to keep the repo clean
 .opencode/
