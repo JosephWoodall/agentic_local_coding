@@ -1,1 +1,13 @@
+# Aider (legacy)
 .aider*
+
+# Server logs
+llama-server.log
+vllm-server.log
+
+# Python venv
+.venv
+
+# OpenClaude
+.openclaude/
+.openclaude.json

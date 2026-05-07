@@ -1,0 +1,62 @@
+#!/bin/bash
+# ==========================================
+# localcode — launch OpenClaude from any directory
+# ==========================================
+# Usage:  cd ~/projects/my-app && localcode
+#
+# This script:
+#   1. Ensures the llama-cpp backend server is running
+#   2. Sets OpenAI-compatible env vars
+#   3. Launches openclaude in your current working directory
+# ==========================================
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+RUN_SCRIPT="$SCRIPT_DIR/run.sh"
+
+# Model config (must match run.sh)
+MODEL_FILE="Qwen_Qwen3.6-35B-A3B-Q2_K.gguf"
+PORT=8080
+
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+# ==========================================
+# 1. Ensure openclaude is installed
+# ==========================================
+if ! command -v openclaude &> /dev/null; then
+    echo "📦 OpenClaude not found. Running first-time setup..."
+    echo ""
+    bash "$RUN_SCRIPT" --server-only
+    if [ $? -ne 0 ]; then
+        echo "❌ Setup failed. See errors above."
+        exit 1
+    fi
+fi
+
+# ==========================================
+# 2. Ensure llama-cpp server is running
+# ==========================================
+if ! curl -s "http://127.0.0.1:$PORT/health" > /dev/null 2>&1; then
+    echo "⏳ Backend server not running. Starting it..."
+    echo ""
+    bash "$RUN_SCRIPT" --server-only
+    if [ $? -ne 0 ]; then
+        echo "❌ Failed to start backend. See errors above."
+        exit 1
+    fi
+    echo ""
+fi
+
+echo "=========================================="
+echo " 🚀 OpenClaude + Local Qwen3.6-35B-A3B"
+echo " 📂 Working directory: $(pwd)"
+echo "=========================================="
+
+# ==========================================
+# 3. Launch OpenClaude in the current directory
+# ==========================================
+export CLAUDE_CODE_USE_OPENAI=1
+export OPENAI_BASE_URL="http://127.0.0.1:$PORT/v1"
+export OPENAI_API_KEY="none"
+export OPENAI_MODEL="$MODEL_FILE"
+
+exec openclaude

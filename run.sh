@@ -13,8 +13,17 @@ PORT=8080
 # Tune UP if no OOM, tune DOWN if you get CUDA OOM errors.
 N_GPU_LAYERS=48
 N_CTX=8192
-VENV_DIR="$(pwd)/.venv"
+VENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.venv"
 PYTHON_VERSION="3.12"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Parse flags
+SERVER_ONLY=false
+for arg in "$@"; do
+    case "$arg" in
+        --server-only) SERVER_ONLY=true ;;
+    esac
+done
 
 echo "=========================================="
 echo " Initializing Local Qwen3.6-35B-A3B Environment"
@@ -26,21 +35,53 @@ echo "=========================================="
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
 # ==========================================
-# 1. INSTALL UV + AIDER
+# 1. INSTALL OPENCLAUDE
 # ==========================================
-echo "⚙️  Checking Python Environment..."
+echo "⚙️  Checking OpenClaude + Dependencies..."
+
+# --- Node.js check ---
+if ! command -v node &> /dev/null; then
+    echo "❌ Node.js not found. OpenClaude requires Node >= 22."
+    echo "   Install via your package manager or https://nodejs.org"
+    exit 1
+fi
+
+NODE_MAJOR=$(node --version | grep -oP '^\Kv?\d+' | tr -d 'v')
+if [ "$NODE_MAJOR" -lt 22 ]; then
+    echo "❌ Node.js v$NODE_MAJOR found, but OpenClaude requires >= 22."
+    echo "   Current: $(node --version)"
+    exit 1
+fi
+echo "✅ Node.js $(node --version)"
+
+# --- ripgrep check ---
+if ! command -v rg &> /dev/null; then
+    echo "⚠️  ripgrep (rg) not found. OpenClaude needs it at runtime."
+    echo "   Install: sudo pacman -S ripgrep  (Arch/CachyOS)"
+    echo "            sudo apt install ripgrep  (Debian/Ubuntu)"
+    echo "   Continuing anyway — OpenClaude bundles a fallback."
+fi
+
+# --- uv (still needed for llama-cpp-python venv) ---
 if ! command -v uv &> /dev/null; then
     echo "📦 Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 fi
 
-if ! uv tool list 2>/dev/null | grep -q "aider-chat"; then
-    echo "📦 Installing Aider..."
-    uv tool install aider-chat --python $PYTHON_VERSION
-    echo "✅ Aider installed."
+# --- OpenClaude ---
+if ! command -v openclaude &> /dev/null; then
+    echo "📦 Installing OpenClaude globally..."
+    npm config set prefix ~/.local
+    npm install -g @gitlawb/openclaude
+    if ! command -v openclaude &> /dev/null; then
+        echo "❌ OpenClaude installation failed."
+        echo "   Try: npm install -g @gitlawb/openclaude"
+        exit 1
+    fi
+    echo "✅ OpenClaude installed."
 else
-    echo "✅ Aider is ready."
+    echo "✅ OpenClaude is ready."
 fi
 
 # ==========================================
@@ -153,7 +194,7 @@ else
     echo "⏳ Starting llama-cpp server..."
     echo "   GPU layers: $N_GPU_LAYERS / CPU handles remainder"
     echo "   Context: $N_CTX tokens"
-    echo "   (Run 'tail -f llama-server.log' to monitor)"
+    echo "   (Run 'tail -f $SCRIPT_DIR/llama-server.log' to monitor)"
 
     python3 -m llama_cpp.server \
         --model "$MODEL_PATH" \
@@ -162,14 +203,14 @@ else
         --n_threads $(nproc) \
         --port $PORT \
         --host 127.0.0.1 \
-        > llama-server.log 2>&1 &
+        > "$SCRIPT_DIR/llama-server.log" 2>&1 &
 
     echo "🧠 Loading model weights..."
     until curl -s "http://127.0.0.1:$PORT/health" > /dev/null 2>&1; do
         if ! pgrep -f "llama_cpp.server" > /dev/null; then
             echo ""
             echo "❌ Server crashed. Last 20 lines of log:"
-            tail -20 llama-server.log
+            tail -20 "$SCRIPT_DIR/llama-server.log"
             echo ""
             echo "💡 If you see CUDA OOM, reduce N_GPU_LAYERS in this script and retry."
             exit 1
@@ -181,16 +222,19 @@ else
 fi
 
 # ==========================================
-# 6. LAUNCH AIDER
+# 6. LAUNCH OPENCLAUDE (or exit if --server-only)
 # ==========================================
-echo "🚀 Launching Aider..."
+if [ "$SERVER_ONLY" = true ]; then
+    echo "✅ Server is running. Use 'localcode' from any directory."
+    exit 0
+fi
+
+echo "🚀 Launching OpenClaude..."
 echo "=========================================="
 
-export OPENAI_API_BASE="http://127.0.0.1:$PORT/v1"
+export CLAUDE_CODE_USE_OPENAI=1
+export OPENAI_BASE_URL="http://127.0.0.1:$PORT/v1"
 export OPENAI_API_KEY="none"
+export OPENAI_MODEL="$MODEL_FILE"
 
-exec aider \
-    --model "openai/$MODEL_FILE" \
-    --openai-api-base "http://127.0.0.1:$PORT/v1" \
-    --openai-api-key "none" \
-    --no-stream
+exec openclaude
