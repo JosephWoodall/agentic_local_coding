@@ -1,0 +1,230 @@
+(APIServer pid=173842) INFO 05-07 09:07:17 [utils.py:299] 
+(APIServer pid=173842) INFO 05-07 09:07:17 [utils.py:299]        █     █     █▄   ▄█
+(APIServer pid=173842) INFO 05-07 09:07:17 [utils.py:299]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.20.1
+(APIServer pid=173842) INFO 05-07 09:07:17 [utils.py:299]   █▄█▀ █     █     █     █  model   Qwen/Qwen3.6-35B-A3B
+(APIServer pid=173842) INFO 05-07 09:07:17 [utils.py:299]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=173842) INFO 05-07 09:07:17 [utils.py:299] 
+(APIServer pid=173842) INFO 05-07 09:07:17 [utils.py:233] non-default args: {'port': 8080, 'model': 'Qwen/Qwen3.6-35B-A3B', 'trust_remote_code': True, 'max_model_len': 32768, 'reasoning_parser': 'qwen3'}
+(APIServer pid=173842) Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+(APIServer pid=173842) INFO 05-07 09:07:23 [nixl_utils.py:20] Setting UCX_RCACHE_MAX_UNRELEASED to '1024' to avoid a rare memory leak in UCX when using NIXL.
+(APIServer pid=173842) WARNING 05-07 09:07:23 [nixl_utils.py:34] NIXL is not available
+(APIServer pid=173842) WARNING 05-07 09:07:23 [nixl_utils.py:44] NIXL agent config is not available
+(APIServer pid=173842) INFO 05-07 09:07:23 [model.py:555] Resolved architecture: Qwen3_5MoeForConditionalGeneration
+(APIServer pid=173842) INFO 05-07 09:07:23 [model.py:1680] Using max model len 32768
+(APIServer pid=173842) INFO 05-07 09:07:23 [vllm.py:840] Asynchronous scheduling is enabled.
+(APIServer pid=173842) INFO 05-07 09:07:23 [kernel.py:205] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'])
+(APIServer pid=173842) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(APIServer pid=173842) [transformers] The `use_fast` parameter is deprecated and will be removed in a future version. Use `backend="torchvision"` instead of `use_fast=True`, or `backend="pil"` instead of `use_fast=False`.
+(EngineCore pid=174108) INFO 05-07 09:07:38 [core.py:109] Initializing a V1 LLM engine (v0.20.1) with config: model='Qwen/Qwen3.6-35B-A3B', speculative_config=None, tokenizer='Qwen/Qwen3.6-35B-A3B', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=32768, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='qwen3', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=Qwen/Qwen3.6-35B-A3B, enable_prefix_caching=False, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [], 'compile_ranges_endpoints': [2048], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native']), enable_flashinfer_autotune=True, moe_backend='auto')
+(EngineCore pid=174108) WARNING 05-07 09:07:39 [nixl_utils.py:34] NIXL is not available
+(EngineCore pid=174108) WARNING 05-07 09:07:39 [nixl_utils.py:44] NIXL agent config is not available
+(EngineCore pid=174108) [transformers] `Qwen2VLImageProcessorFast` is deprecated. The `Fast` suffix for image processors has been removed; use `Qwen2VLImageProcessor` instead.
+(EngineCore pid=174108) Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+(EngineCore pid=174108) INFO 05-07 09:07:41 [parallel_state.py:1402] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://192.168.100.29:59867 backend=nccl
+(EngineCore pid=174108) INFO 05-07 09:07:41 [parallel_state.py:1715] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank 0, EPLB rank N/A
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136] EngineCore failed to start.
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136] Traceback (most recent call last):
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core.py", line 1110, in run_engine_core
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     return func(*args, **kwargs)
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core.py", line 876, in __init__
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     super().__init__(
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     ~~~~~~~~~~~~~~~~^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]         vllm_config,
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]         ^^^^^^^^^^^^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     ...<3 lines>...
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]         internal_dp_balancing,
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]         ^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     )
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     ^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core.py", line 118, in __init__
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     self.model_executor = executor_class(vllm_config)
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]                           ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     return func(*args, **kwargs)
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     self._init_executor()
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     ~~~~~~~~~~~~~~~~~~~^^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/executor/uniproc_executor.py", line 47, in _init_executor
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     self.driver_worker.init_device()
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/worker/worker_base.py", line 317, in init_device
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     self.worker.init_device()  # type: ignore
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     ~~~~~~~~~~~~~~~~~~~~~~~^^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     return func(*args, **kwargs)
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/worker/gpu_worker.py", line 283, in init_device
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     self.requested_memory = request_memory(init_snapshot, self.cache_config)
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]                             ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/worker/utils.py", line 413, in request_memory
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     raise ValueError(
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     ...<7 lines>...
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136]     )
+(EngineCore pid=174108) ERROR 05-07 09:07:41 [core.py:1136] ValueError: Free memory on device cuda:0 (9.91/11.49 GiB) on startup is less than desired GPU memory utilization (0.92, 10.57 GiB). Decrease GPU memory utilization or reduce GPU memory used by other processes.
+(EngineCore pid=174108) Process EngineCore:
+(EngineCore pid=174108) Traceback (most recent call last):
+(EngineCore pid=174108)   File "/usr/lib/python3.14/multiprocessing/process.py", line 320, in _bootstrap
+(EngineCore pid=174108)     self.run()
+(EngineCore pid=174108)     ~~~~~~~~^^
+(EngineCore pid=174108)   File "/usr/lib/python3.14/multiprocessing/process.py", line 108, in run
+(EngineCore pid=174108)     self._target(*self._args, **self._kwargs)
+(EngineCore pid=174108)     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core.py", line 1140, in run_engine_core
+(EngineCore pid=174108)     raise e
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core.py", line 1110, in run_engine_core
+(EngineCore pid=174108)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=174108)     return func(*args, **kwargs)
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core.py", line 876, in __init__
+(EngineCore pid=174108)     super().__init__(
+(EngineCore pid=174108)     ~~~~~~~~~~~~~~~~^
+(EngineCore pid=174108)         vllm_config,
+(EngineCore pid=174108)         ^^^^^^^^^^^^
+(EngineCore pid=174108)     ...<3 lines>...
+(EngineCore pid=174108)         internal_dp_balancing,
+(EngineCore pid=174108)         ^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=174108)     )
+(EngineCore pid=174108)     ^
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core.py", line 118, in __init__
+(EngineCore pid=174108)     self.model_executor = executor_class(vllm_config)
+(EngineCore pid=174108)                           ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=174108)     return func(*args, **kwargs)
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore pid=174108)     self._init_executor()
+(EngineCore pid=174108)     ~~~~~~~~~~~~~~~~~~~^^
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/executor/uniproc_executor.py", line 47, in _init_executor
+(EngineCore pid=174108)     self.driver_worker.init_device()
+(EngineCore pid=174108)     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/worker/worker_base.py", line 317, in init_device
+(EngineCore pid=174108)     self.worker.init_device()  # type: ignore
+(EngineCore pid=174108)     ~~~~~~~~~~~~~~~~~~~~~~~^^
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=174108)     return func(*args, **kwargs)
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/worker/gpu_worker.py", line 283, in init_device
+(EngineCore pid=174108)     self.requested_memory = request_memory(init_snapshot, self.cache_config)
+(EngineCore pid=174108)                             ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=174108)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/worker/utils.py", line 413, in request_memory
+(EngineCore pid=174108)     raise ValueError(
+(EngineCore pid=174108)     ...<7 lines>...
+(EngineCore pid=174108)     )
+(EngineCore pid=174108) ValueError: Free memory on device cuda:0 (9.91/11.49 GiB) on startup is less than desired GPU memory utilization (0.92, 10.57 GiB). Decrease GPU memory utilization or reduce GPU memory used by other processes.
+[rank0]:[W507 09:07:42.541628220 ProcessGroupNCCL.cpp:1575] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+(APIServer pid=173842) Traceback (most recent call last):
+(APIServer pid=173842)   File "<frozen runpy>", line 198, in _run_module_as_main
+(APIServer pid=173842)   File "<frozen runpy>", line 88, in _run_code
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/entrypoints/openai/api_server.py", line 718, in <module>
+(APIServer pid=173842)     uvloop.run(run_server(args))
+(APIServer pid=173842)     ~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=173842)     return __asyncio.run(
+(APIServer pid=173842)            ~~~~~~~~~~~~~^
+(APIServer pid=173842)         wrapper(),
+(APIServer pid=173842)         ^^^^^^^^^^
+(APIServer pid=173842)     ...<2 lines>...
+(APIServer pid=173842)         **run_kwargs
+(APIServer pid=173842)         ^^^^^^^^^^^^
+(APIServer pid=173842)     )
+(APIServer pid=173842)     ^
+(APIServer pid=173842)   File "/usr/lib/python3.14/asyncio/runners.py", line 204, in run
+(APIServer pid=173842)     return runner.run(main)
+(APIServer pid=173842)            ~~~~~~~~~~^^^^^^
+(APIServer pid=173842)   File "/usr/lib/python3.14/asyncio/runners.py", line 127, in run
+(APIServer pid=173842)     return self._loop.run_until_complete(task)
+(APIServer pid=173842)            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+(APIServer pid=173842)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=173842)     return await main
+(APIServer pid=173842)            ^^^^^^^^^^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/entrypoints/openai/api_server.py", line 678, in run_server
+(APIServer pid=173842)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/entrypoints/openai/api_server.py", line 692, in run_server_worker
+(APIServer pid=173842)     async with build_async_engine_client(
+(APIServer pid=173842)                ~~~~~~~~~~~~~~~~~~~~~~~~~^
+(APIServer pid=173842)         args,
+(APIServer pid=173842)         ^^^^^
+(APIServer pid=173842)         client_config=client_config,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     ) as engine_client:
+(APIServer pid=173842)     ^
+(APIServer pid=173842)   File "/usr/lib/python3.14/contextlib.py", line 214, in __aenter__
+(APIServer pid=173842)     return await anext(self.gen)
+(APIServer pid=173842)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=173842)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=173842)                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+(APIServer pid=173842)         engine_args,
+(APIServer pid=173842)         ^^^^^^^^^^^^
+(APIServer pid=173842)         usage_context=usage_context,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)         client_config=client_config,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     ) as engine:
+(APIServer pid=173842)     ^
+(APIServer pid=173842)   File "/usr/lib/python3.14/contextlib.py", line 214, in __aenter__
+(APIServer pid=173842)     return await anext(self.gen)
+(APIServer pid=173842)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/entrypoints/openai/api_server.py", line 136, in build_async_engine_client_from_engine_args
+(APIServer pid=173842)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=173842)         vllm_config=vllm_config,
+(APIServer pid=173842)     ...<6 lines>...
+(APIServer pid=173842)         client_index=client_index,
+(APIServer pid=173842)     )
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/async_llm.py", line 217, in from_vllm_config
+(APIServer pid=173842)     return cls(
+(APIServer pid=173842)         vllm_config=vllm_config,
+(APIServer pid=173842)     ...<9 lines>...
+(APIServer pid=173842)         client_index=client_index,
+(APIServer pid=173842)     )
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/async_llm.py", line 146, in __init__
+(APIServer pid=173842)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=173842)                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+(APIServer pid=173842)         vllm_config=vllm_config,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     ...<4 lines>...
+(APIServer pid=173842)         client_index=client_index,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     )
+(APIServer pid=173842)     ^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=173842)     return func(*args, **kwargs)
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core_client.py", line 130, in make_async_mp_client
+(APIServer pid=173842)     return AsyncMPClient(*client_args)
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=173842)     return func(*args, **kwargs)
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core_client.py", line 900, in __init__
+(APIServer pid=173842)     super().__init__(
+(APIServer pid=173842)     ~~~~~~~~~~~~~~~~^
+(APIServer pid=173842)         asyncio_mode=True,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     ...<3 lines>...
+(APIServer pid=173842)         client_addresses=client_addresses,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     )
+(APIServer pid=173842)     ^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/core_client.py", line 535, in __init__
+(APIServer pid=173842)     with launch_core_engines(
+(APIServer pid=173842)          ~~~~~~~~~~~~~~~~~~~^
+(APIServer pid=173842)         vllm_config, executor_class, log_stats, addresses
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     ) as (engine_manager, coordinator, addresses, tensor_queue):
+(APIServer pid=173842)     ^
+(APIServer pid=173842)   File "/usr/lib/python3.14/contextlib.py", line 148, in __exit__
+(APIServer pid=173842)     next(self.gen)
+(APIServer pid=173842)     ~~~~^^^^^^^^^^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/utils.py", line 1119, in launch_core_engines
+(APIServer pid=173842)     wait_for_engine_startup(
+(APIServer pid=173842)     ~~~~~~~~~~~~~~~~~~~~~~~^
+(APIServer pid=173842)         handshake_socket,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     ...<6 lines>...
+(APIServer pid=173842)         coordinator.proc if coordinator else None,
+(APIServer pid=173842)         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=173842)     )
+(APIServer pid=173842)     ^
+(APIServer pid=173842)   File "/home/redleadr/workspace/agentic_local_coding/.venv/lib/python3.14/site-packages/vllm/v1/engine/utils.py", line 1178, in wait_for_engine_startup
+(APIServer pid=173842)     raise RuntimeError(
+(APIServer pid=173842)     ...<3 lines>...
+(APIServer pid=173842)     )
+(APIServer pid=173842) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
