@@ -12,7 +12,10 @@ PORT=8080
 # Q2_K is 12.6GB total. Start at 48 layers on GPU, rest on CPU.
 # Tune UP if no OOM, tune DOWN if you get CUDA OOM errors.
 N_GPU_LAYERS=48
-N_CTX=8192
+N_CTX=32768
+# OpenClaude token limits — must fit within N_CTX
+# OpenClaude defaults to 128K context / 32K output which will exceed the server.
+MAX_OUTPUT_TOKENS=8192
 VENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.venv"
 PYTHON_VERSION="3.12"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -206,7 +209,7 @@ else
         > "$SCRIPT_DIR/llama-server.log" 2>&1 &
 
     echo "🧠 Loading model weights..."
-    until curl -s "http://127.0.0.1:$PORT/health" > /dev/null 2>&1; do
+    until curl -s "http://127.0.0.1:$PORT/v1/models" > /dev/null 2>&1; do
         if ! pgrep -f "llama_cpp.server" > /dev/null; then
             echo ""
             echo "❌ Server crashed. Last 20 lines of log:"
@@ -230,11 +233,19 @@ if [ "$SERVER_ONLY" = true ]; then
 fi
 
 echo "🚀 Launching OpenClaude..."
+echo "   📂 Directory: $(pwd)"
+echo "   🧠 Model:     $MODEL_FILE"
+echo "   🔧 Context:   $N_CTX tokens (max output: $MAX_OUTPUT_TOKENS)"
 echo "=========================================="
 
 export CLAUDE_CODE_USE_OPENAI=1
 export OPENAI_BASE_URL="http://127.0.0.1:$PORT/v1"
 export OPENAI_API_KEY="none"
 export OPENAI_MODEL="$MODEL_FILE"
+
+# Tell OpenClaude the actual context window and output limit
+# so it doesn't request more tokens than the server can handle.
+export CLAUDE_CODE_OPENAI_FALLBACK_CONTEXT_WINDOW=$N_CTX
+export CLAUDE_CODE_OPENAI_MAX_OUTPUT_TOKENS=$MAX_OUTPUT_TOKENS
 
 exec openclaude

@@ -16,6 +16,8 @@ RUN_SCRIPT="$SCRIPT_DIR/run.sh"
 # Model config (must match run.sh)
 MODEL_FILE="Qwen_Qwen3.6-35B-A3B-Q2_K.gguf"
 PORT=8080
+N_CTX=32768
+MAX_OUTPUT_TOKENS=8192
 
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
@@ -35,7 +37,7 @@ fi
 # ==========================================
 # 2. Ensure llama-cpp server is running
 # ==========================================
-if ! curl -s "http://127.0.0.1:$PORT/health" > /dev/null 2>&1; then
+if ! curl -s "http://127.0.0.1:$PORT/v1/models" > /dev/null 2>&1; then
     echo "⏳ Backend server not running. Starting it..."
     echo ""
     bash "$RUN_SCRIPT" --server-only
@@ -48,7 +50,9 @@ fi
 
 echo "=========================================="
 echo " 🚀 OpenClaude + Local Qwen3.6-35B-A3B"
-echo " 📂 Working directory: $(pwd)"
+echo " 📂 $(pwd)"
+echo " 🧠 $MODEL_FILE"
+echo " 🔧 Context: ${N_CTX} tokens (max output: ${MAX_OUTPUT_TOKENS})"
 echo "=========================================="
 
 # ==========================================
@@ -58,5 +62,10 @@ export CLAUDE_CODE_USE_OPENAI=1
 export OPENAI_BASE_URL="http://127.0.0.1:$PORT/v1"
 export OPENAI_API_KEY="none"
 export OPENAI_MODEL="$MODEL_FILE"
+
+# Tell OpenClaude the actual context window and output limit
+# so it doesn't request more tokens than the server can handle.
+export CLAUDE_CODE_OPENAI_FALLBACK_CONTEXT_WINDOW=$N_CTX
+export CLAUDE_CODE_OPENAI_MAX_OUTPUT_TOKENS=$MAX_OUTPUT_TOKENS
 
 exec openclaude
