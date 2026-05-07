@@ -1321,3 +1321,10 @@ INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
 INFO:     127.0.0.1:48092 - "GET /health HTTP/1.1" 404 Not Found
 INFO:     127.0.0.1:35580 - "GET /health HTTP/1.1" 404 Not Found
 INFO:     127.0.0.1:50088 - "GET /v1/models HTTP/1.1" 200 OK
+llama_perf_context_print:        load time =       0.58 ms
+llama_perf_context_print: prompt eval time =    5228.61 ms /   843 tokens (    6.20 ms per token,   161.23 tokens per second)
+llama_perf_context_print:        eval time =  150190.99 ms /   531 runs   (  282.85 ms per token,     3.54 tokens per second)
+llama_perf_context_print:       total time =  167071.61 ms /  1374 tokens
+llama_perf_context_print:    graphs reused =        528
+INFO:     127.0.0.1:58674 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+Llama.generate: 458 prefix-match found but partial kv removal not supported, re-evaluating full prompt
