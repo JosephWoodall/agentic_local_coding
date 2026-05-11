@@ -14,10 +14,10 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 RUN_SCRIPT="$SCRIPT_DIR/run.sh"
 
 # Model config (must match run.sh)
-MODEL_FILE="Qwen_Qwen3.6-35B-A3B-Q2_K.gguf"
+MODEL_FILE="Qwen2.5-Coder-14B-Instruct-Q4_K_M.gguf"
 PORT=8080
-N_CTX=32768
-MAX_OUTPUT_TOKENS=8192
+N_CTX=16384
+MAX_OUTPUT_TOKENS=4096
 
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
@@ -49,10 +49,10 @@ if ! curl -s "http://127.0.0.1:$PORT/v1/models" > /dev/null 2>&1; then
 fi
 
 echo "=========================================="
-echo " 🚀 OpenClaude + Local Qwen3.6-35B-A3B"
-echo " 📂 $(pwd)"
-echo " 🧠 $MODEL_FILE"
-echo " 🔧 Context: ${N_CTX} tokens (max output: ${MAX_OUTPUT_TOKENS})"
+echo " 🚀 OpenClaude + Local Qwen2.5-Coder-14B"
+echo " 📂 Working Directory: $(pwd)"
+echo " 🧠 Model:             $MODEL_FILE"
+echo " 🔧 Context:           ${N_CTX} tokens"
 echo "=========================================="
 
 # ==========================================

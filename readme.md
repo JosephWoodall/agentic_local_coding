@@ -8,7 +8,7 @@ Run a fully local, private coding agent — like Claude Code or Gemini CLI — p
 |-----------|------|
 | **[OpenClaude](https://github.com/Gitlawb/openclaude)** | Coding-agent CLI (tools, bash, file edit, grep, agents, MCP) |
 | **[llama-cpp-python](https://github.com/abetlen/llama-cpp-python)** | OpenAI-compatible server for GGUF models |
-| **Qwen3.6-35B-A3B (Q2_K)** | Mixture-of-experts LLM — activates only 3B params per token |
+| **Qwen2.5-Coder-14B (Q4_K_M)** | SOTA specialized coding model (fits fully in 12GB VRAM) |
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ chmod +x run.sh localcode
 This will:
 - Install OpenClaude globally via npm
 - Create a Python venv with llama-cpp-python (CUDA if available)
-- Download the GGUF model (~12.6GB, one-time)
+- Download the GGUF model (~9.1GB, one-time)
 - Start the local server and launch OpenClaude
 
 ### 2. Use from any directory (the good stuff)
@@ -71,10 +71,10 @@ pkill -f llama_cpp.server
 Edit the top of `run.sh` to change models:
 
 ```bash
-MODEL_REPO="bartowski/Qwen_Qwen3.6-35B-A3B-GGUF"
-MODEL_FILE="Qwen_Qwen3.6-35B-A3B-Q2_K.gguf"
-N_GPU_LAYERS=48    # Tune for your VRAM
-N_CTX=8192         # Context window
+MODEL_REPO="bartowski/Qwen2.5-Coder-14B-Instruct-GGUF"
+MODEL_FILE="Qwen2.5-Coder-14B-Instruct-Q4_K_M.gguf"
+N_GPU_LAYERS=-1    # -1 means all layers on GPU
+N_CTX=16384        # Context window
 ```
 
 **Tip:** For a different model, also update `MODEL_FILE` in `localcode` to match.

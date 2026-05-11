@@ -3,19 +3,17 @@
 # ==========================================
 # CONFIGURATION
 # ==========================================
-MODEL_REPO="bartowski/Qwen_Qwen3.6-35B-A3B-GGUF"
-MODEL_FILE="Qwen_Qwen3.6-35B-A3B-Q2_K.gguf"
+MODEL_REPO="bartowski/Qwen2.5-Coder-14B-Instruct-GGUF"
+MODEL_FILE="Qwen2.5-Coder-14B-Instruct-Q4_K_M.gguf"
 MODEL_DIR="$HOME/.cache/gguf"
 MODEL_PATH="$MODEL_DIR/$MODEL_FILE"
 PORT=8080
-# With 12GB VRAM, ~10GB is usable after CUDA overhead.
-# Q2_K is 12.6GB total. Start at 48 layers on GPU, rest on CPU.
-# Tune UP if no OOM, tune DOWN if you get CUDA OOM errors.
-N_GPU_LAYERS=48
-N_CTX=32768
+# Qwen 2.5 Coder 14B Q4_K_M is ~9.1GB.
+# This fits 100% in 12GB VRAM with room for context.
+N_GPU_LAYERS=-1
+N_CTX=16384
 # OpenClaude token limits — must fit within N_CTX
-# OpenClaude defaults to 128K context / 32K output which will exceed the server.
-MAX_OUTPUT_TOKENS=8192
+MAX_OUTPUT_TOKENS=4096
 VENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.venv"
 PYTHON_VERSION="3.12"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,7 +27,7 @@ for arg in "$@"; do
 done
 
 echo "=========================================="
-echo " Initializing Local Qwen3.6-35B-A3B Environment"
+echo " Initializing Local Qwen2.5-Coder-14B Environment"
 echo "=========================================="
 
 # ==========================================
@@ -168,7 +166,7 @@ fi
 mkdir -p "$MODEL_DIR"
 
 if [ ! -f "$MODEL_PATH" ]; then
-    echo "📥 Downloading $MODEL_FILE (~12.6GB, one-time)..."
+    echo "📥 Downloading $MODEL_FILE (~9.1GB, one-time)..."
 
     # Ensure hf CLI is available (huggingface-cli is deprecated)
     if ! command -v hf &> /dev/null; then
@@ -204,6 +202,7 @@ else
         --n_gpu_layers $N_GPU_LAYERS \
         --n_ctx $N_CTX \
         --n_threads $(nproc) \
+        --flash_attn true \
         --port $PORT \
         --host 127.0.0.1 \
         > "$SCRIPT_DIR/llama-server.log" 2>&1 &
@@ -233,9 +232,9 @@ if [ "$SERVER_ONLY" = true ]; then
 fi
 
 echo "🚀 Launching OpenClaude..."
-echo "   📂 Directory: $(pwd)"
-echo "   🧠 Model:     $MODEL_FILE"
-echo "   🔧 Context:   $N_CTX tokens (max output: $MAX_OUTPUT_TOKENS)"
+echo "   📂 Working Directory: $(pwd)"
+echo "   🧠 Model:             $MODEL_FILE"
+echo "   🔧 Context:           $N_CTX tokens"
 echo "=========================================="
 
 export CLAUDE_CODE_USE_OPENAI=1
